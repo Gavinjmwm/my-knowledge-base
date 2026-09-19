@@ -1,0 +1,12 @@
+# 依赖包（体积大，可用 npm install 恢复）
+node_modules/
+
+# 构建产物（可用 npm run docs:build 重新生成）
+docs/.vitepress/dist/
+
+# 开发服务器缓存
+docs/.vitepress/cache/
+
+# 系统文件
+.DS_Store
+Thumbs.db
