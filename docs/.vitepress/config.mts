@@ -31,20 +31,20 @@ export default defineConfig({
       {
         text: '前端',
         items: [
-          { text: 'JavaScript 基础', link: '/notes/javascript-basics' },
-          { text: 'HTML 基础', link: '/notes/html-basics' }
+          { text: 'JavaScript 基础', link: '/notes/frontend/javascript-basics' },
+          { text: 'HTML 基础', link: '/notes/frontend/html-basics' }
         ]
       },
       {
         text: '后端',
         items: [
-          { text: '后端笔记（建设中）', link: '/notes/backend' }
+          { text: '后端笔记（建设中）', link: '/notes/backend/' }
         ]
       },
       {
         text: 'AI 知识',
         items: [
-          { text: 'AI 笔记（建设中）', link: '/notes/ai' }
+          { text: 'AI 笔记（建设中）', link: '/notes/ai/' }
         ]
       }
     ],
@@ -56,22 +56,22 @@ export default defineConfig({
           text: '前端',
           collapsed: false,
           items: [
-            { text: 'JavaScript 基础', link: '/notes/javascript-basics' },
-            { text: 'HTML 基础', link: '/notes/html-basics' }
+            { text: 'JavaScript 基础', link: '/notes/frontend/javascript-basics' },
+            { text: 'HTML 基础', link: '/notes/frontend/html-basics' }
           ]
         },
         {
           text: '后端',
           collapsed: true,
           items: [
-            { text: '后端笔记（建设中）', link: '/notes/backend' }
+            { text: '后端笔记（建设中）', link: '/notes/backend/' }
           ]
         },
         {
           text: 'AI 知识',
           collapsed: true,
           items: [
-            { text: 'AI 笔记（建设中）', link: '/notes/ai' }
+            { text: 'AI 笔记（建设中）', link: '/notes/ai/' }
           ]
         }
       ]
