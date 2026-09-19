@@ -1,0 +1,59 @@
+name: 部署知识库网站到 GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # 允许在 GitHub 页面上手动触发
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只保留一次部署，避免排队冲突
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 拉取完整历史，保证「最后更新」时间正确
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 配置 Pages（未开启时自动开启）
+        uses: actions/configure-pages@v4
+        with:
+          enablement: true
+
+      # 项目页网址带仓库名，构建时必须指定 base，否则线上样式会丢失
+      - name: 构建网站
+        run: npx vitepress build docs --base /my-knowledge-base/
+
+      - name: 上传构建产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.vitepress/dist
+
+  deploy:
+    name: 部署
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

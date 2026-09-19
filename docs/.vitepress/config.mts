@@ -12,7 +12,8 @@ export default defineConfig({
   title: '我的知识库',
   description: '前端笔记 - 基于 VitePress 的个人本地知识库',
   lastUpdated: true,
-  cleanUrls: true,
+  // GitHub Pages 不支持无 .html 后缀的 URL，关闭以保证线上页面刷新不 404
+  cleanUrls: false,
 
   markdown: {
     config(md) {
