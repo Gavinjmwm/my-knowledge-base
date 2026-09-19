@@ -39,7 +39,8 @@ export default defineConfig({
         text: '后端',
         items: [
           { text: 'Redis 基础', link: '/notes/backend/redis-basics' },
-          { text: '后端笔记（建设中）', link: '/notes/backend/' }
+          { text: '后端笔记（建设中）', link: '/notes/backend/' },
+	{ text : 'MySQL 基础' , link : '/notes/backend/mysql-basics' }
         ]
       },
       {
@@ -66,7 +67,8 @@ export default defineConfig({
           collapsed: false,
           items: [
             { text: 'Redis 基础', link: '/notes/backend/redis-basics' },
-            { text: '后端笔记（建设中）', link: '/notes/backend/' }
+            { text: '后端笔记（建设中）', link: '/notes/backend/' },
+		{ text : 'MySQL 基础' , link : '/notes/backend/mysql-basics' }
           ]
         },
         {
