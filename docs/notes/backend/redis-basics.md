@@ -24,7 +24,7 @@
 > [!TIP]
 > 它俩不是竞争关系：MySQL 负责「永久保存」，Redis 负责「快速读写」，这是后端开发的经典组合。
 
-## 二、五大数据类型
+## 二、五大数据类型速览
 
 | 类型 | 特点 | 典型场景 |
 | --- | --- | --- |
@@ -32,34 +32,35 @@
 | `Hash` | 一个键下挂多个字段 | 存对象（用户信息等） |
 | `List` | 有序、可两头插入 | 消息队列、最新动态 |
 | `Set` | 无序、自动去重 | 抽奖、共同好友 |
-| `ZSet` | 带分数排序 | ==排行榜==、延迟队列 |
+| `SortedSet` | 带 score 分数排序 | ==排行榜==、延迟队列 |
 
-## 三、五大数据类型常用命令
+## 三、五大数据类型详解
 
 装好 Redis 后，用 `redis-cli` 练习。命令**不区分大小写**（`set` 和 `SET` 效果一样），下面统一用大写。
 
 ### 3.1 String（字符串）
 
-最基础的类型，一个 key 对应一个值。
+**概念**：最基础的类型，一个 key 对应一个 value。可以存字符串、整数、浮点数，也可以把对象序列化成 JSON 字符串后整体存进去。
 
-| 命令 | 作用 | 示例 |
-| --- | --- | --- |
-| `SET key value` | 添加或修改已经存在的一个 String 类型的键值对 | `SET name "gavin"` |
-| `GET key` | 根据 key 获取 String 类型的 value | `GET name` → `"gavin"` |
-| `MSET k1 v1 k2 v2` | 批量添加多个 String 类型的键值对 | `MSET a 1 b 2` |
-| `MGET k1 k2` | 根据多个 key 获取多个 String 类型的 value | `MGET a b` → `1`、`2` |
-| `INCR key` | 让一个整型的 key 自增 1 | `INCR views` |
-| `INCRBY key n` | 让一个整型的 key 自增并指定步长 | `INCRBY num 2` 让 num 自增 2 |
-| `INCRBYFLOAT key n` | 让一个浮点类型的数字自增并指定步长 | `INCRBYFLOAT price 0.5` |
-| `SETNX key value` | 添加一个 String 键值对，**前提是 key 不存在**，否则不执行 | `SETNX lock 1` |
-| `SETEX key seconds value` | 添加一个 String 键值对，并且指定有效期 | `SETEX code 300 "666888"` |
-| `DEL key` | 删除 key（通用命令，五种类型都能用） | `DEL name` |
+**常见命令**
+
+| 命令 | 作用 |
+| --- | --- |
+| `SET key value` | 添加或修改已经存在的一个 String 类型的键值对 |
+| `GET key` | 根据 key 获取 String 类型的 value |
+| `MSET key1 value1 key2 value2 ...` | 批量添加多个 String 类型的键值对 |
+| `MGET key1 key2 ...` | 根据多个 key 获取多个 String 类型的 value |
+| `INCR key` | 让一个整型的 key 自增 1 |
+| `INCRBY key n` | 让一个整型的 key 自增并指定步长，例如 `INCRBY num 2` 让 num 值自增 2 |
+| `INCRBYFLOAT key n` | 让一个浮点类型的数字自增并指定步长 |
+| `SETNX key value` | 添加一个 String 类型的键值对，**前提是这个 key 不存在**，否则不执行 |
+| `SETEX key seconds value` | 添加一个 String 类型的键值对，并且指定有效期 |
+| `DEL key` | 删除 key（通用命令，任何类型都能用） |
 
 ```bash
 SET name "gavin"          # 存
 GET name                  # 取 -> "gavin"
-INCR views                # 自增 1，做计数器神器
-DEL name                  # 删除
+INCR views                # 自增 1，计数器神器
 
 # 过期时间（缓存的核心机制）
 SET code "666888" EX 300  # 300 秒后自动消失
@@ -69,45 +70,77 @@ TTL code                  # 查看剩余秒数
 > [!TIP]
 > `SET key value EX 300` 和 `SETEX key 300 value` 效果相同，前者更常用。`SETNX` 是**分布式锁**的基础。
 
-### 3.2 Hash（哈希）
+### 3.2 Hash（哈希 / 散列）
 
-一个 key 下挂多个「字段 = 值」，专门用来存**对象**。
+**概念**：Hash 类型也叫散列，其 value 是一个无序字典，类似于 Java 中的 **HashMap** 结构。
 
-| 命令 | 作用 | 示例 |
+**为什么要有 Hash？** 对比下面两种存对象的方式：
+
+String 结构是把对象**序列化成 JSON 字符串后整体存储**，当需要修改对象的某个字段时很不方便（要整体取出来、改完再整体写回）：
+
+| KEY | VALUE |
+| --- | --- |
+| `heima:user:1` | `{name:"Jack", age:21}` |
+| `heima:user:2` | `{name:"Rose", age:18}` |
+
+Hash 结构把对象中的**每个字段独立存储**，可以针对单个字段做 CRUD：
+
+| KEY | field | value |
 | --- | --- | --- |
-| `HSET key field value` | 添加或修改一个字段 | `HSET user:1 name "gavin"` |
-| `HGET key field` | 获取一个字段的值 | `HGET user:1 name` |
-| `HMGET key f1 f2` | 批量获取多个字段 | `HMGET user:1 name age` |
-| `HGETALL key` | 获取全部字段和值 | `HGETALL user:1` |
-| `HKEYS` / `HVALS` | 只取所有字段名 / 所有字段值 | `HKEYS user:1` |
-| `HDEL key field` | 删除某个字段 | `HDEL user:1 age` |
-| `HINCRBY key field n` | 某个字段自增 | `HINCRBY user:1 age 1` |
-| `HEXISTS key field` | 判断字段是否存在 | `HEXISTS user:1 name` |
+| `heima:user:1` | name | Jack |
+| `heima:user:1` | age | 21 |
+| `heima:user:2` | name | Rose |
+| `heima:user:2` | age | 18 |
+
+**常见命令**
+
+| 命令 | 作用 |
+| --- | --- |
+| `HSET key field value` | 添加或者修改 hash 类型 key 的 field 的值 |
+| `HGET key field` | 获取一个 hash 类型 key 的 field 的值 |
+| `HMSET` | 批量添加多个 hash 类型 key 的 field 的值 |
+| `HMGET` | 批量获取多个 hash 类型 key 的 field 的值 |
+| `HGETALL` | 获取一个 hash 类型的 key 中的所有的 field 和 value |
+| `HKEYS` | 获取一个 hash 类型的 key 中的所有的 field |
+| `HVALS` | 获取一个 hash 类型的 key 中的所有的 value |
+| `HINCRBY` | 让一个 hash 类型 key 的字段值自增并指定步长 |
+| `HSETNX` | 添加一个 hash 类型的 key 的 field 值，**前提是这个 field 不存在**，否则不执行 |
 
 ```bash
-HSET user:1 name "gavin" age 19   # 一次存多个字段
-HGET user:1 name                  # -> "gavin"
-HGETALL user:1                    # 取全部字段
+HSET heima:user:1 name "Jack"   # 存一个字段
+HSET heima:user:1 age 21        # 再存一个字段
+HGET heima:user:1 name          # -> "Jack"
+HGETALL heima:user:1            # 取全部 field 和 value
+HINCRBY heima:user:1 age 1      # age 变成 22
 ```
 
 ### 3.3 List（列表）
 
-有序、可重复，可以从**两头**插入和弹出，像一根双向管道。
+**概念**：Redis 中的 List 类型与 Java 中的 **LinkedList** 类似，可以看做一个**双向链表**结构。既可以支持正向检索，也可以支持反向检索。
 
-| 命令 | 作用 | 示例 |
-| --- | --- | --- |
-| `LPUSH key v1 v2` | 从**左**边插入 | `LPUSH queue "a"` |
-| `RPUSH key v1 v2` | 从**右**边插入 | `RPUSH queue "b"` |
-| `LPOP` / `RPOP` | 从左边 / 右边弹出并删除 | `LPOP queue` |
-| `LRANGE key start stop` | 按范围查看，`0 -1` 表示全部 | `LRANGE queue 0 -1` |
-| `LLEN key` | 列表长度 | `LLEN queue` |
-| `LINDEX key n` | 取第 n 个元素（从 0 开始） | `LINDEX queue 0` |
-| `BLPOP key timeout` | 阻塞式左弹出（没数据就等） | `BLPOP queue 10` |
+**特征**（与 LinkedList 类似）：
+
+- 有序
+- 元素可以重复
+- 插入和删除快
+- 查询速度一般
+
+**常见命令**
+
+| 命令 | 作用 |
+| --- | --- |
+| `LPUSH key element ...` | 向列表**左侧**插入一个或多个元素 |
+| `LPOP key` | 移除并返回列表左侧的第一个元素，没有则返回 `nil` |
+| `RPUSH key element ...` | 向列表**右侧**插入一个或多个元素 |
+| `RPOP key` | 移除并返回列表右侧的第一个元素 |
+| `LRANGE key star end` | 返回一段角标范围内的所有元素 |
+| `BLPOP key timeout` / `BRPOP key timeout` | 与 LPOP / RPOP 类似，只不过在没有元素时**等待指定时间**，而不是直接返回 nil |
 
 ```bash
 LPUSH queue "a"           # 从左边塞
 RPUSH queue "b"           # 从右边塞
-LRANGE queue 0 -1         # 查看全部
+LRANGE queue 0 -1         # 查看全部（0 -1 表示从头到尾）
+LPOP queue                # 从左边取出并删除
 ```
 
 > [!TIP]
@@ -115,43 +148,83 @@ LRANGE queue 0 -1         # 查看全部
 
 ### 3.4 Set（集合）
 
-无序、**自动去重**，支持交集 / 并集 / 差集。
+**概念**：Redis 的 Set 结构与 Java 中的 **HashSet** 类似，可以看做是一个 **value 为 null 的 HashMap**。因为也是一个 hash 表，因此具备与 HashSet 类似的特征。
 
-| 命令 | 作用 | 示例 |
-| --- | --- | --- |
-| `SADD key m1 m2` | 添加元素（重复的自动丢弃） | `SADD lottery "张三" "李四"` |
-| `SMEMBERS key` | 查看所有元素 | `SMEMBERS lottery` |
-| `SREM key member` | 删除某个元素 | `SREM lottery "张三"` |
-| `SCARD key` | 元素个数 | `SCARD lottery` |
-| `SISMEMBER key member` | 判断元素是否存在 | `SISMEMBER lottery "张三"` |
-| `SINTER k1 k2` | 交集（共同好友） | `SINTER set1 set2` |
-| `SDIFF k1 k2` | 差集 | `SDIFF set1 set2` |
-| `SUNION k1 k2` | 并集 | `SUNION set1 set2` |
+**特征**：
 
-```bash
-SADD lottery "张三" "李四" "张三"  # 重复的存不进去
-SMEMBERS lottery                  # -> 张三、李四
-```
+- 无序
+- 元素不可重复
+- 查找快
+- 支持交集、并集、差集等功能
 
-### 3.5 ZSet（有序集合）
+**常见命令**
 
-在 Set 的基础上，每个元素多带一个**分数 score**，按分数自动排序——排行榜的标准方案。
-
-| 命令 | 作用 | 示例 |
-| --- | --- | --- |
-| `ZADD key score member` | 添加元素并指定分数 | `ZADD rank 95 "张三"` |
-| `ZINCRBY key n member` | 给某个成员的分数加 n | `ZINCRBY rank 5 "张三"` |
-| `ZRANGE key start stop` | 按分数**从低到高**取 | `ZRANGE rank 0 -1` |
-| `ZREVRANGE key start stop` | 按分数**从高到低**取 | `ZREVRANGE rank 0 -1 WITHSCORES` |
-| `ZSCORE key member` | 查询某个成员的分数 | `ZSCORE rank "张三"` |
-| `ZRANK` / `ZREVRANK` | 正序 / 倒序排名（从 0 开始） | `ZREVRANK rank "张三"` |
-| `ZCARD key` | 元素个数 | `ZCARD rank` |
-| `ZREM key member` | 删除成员 | `ZREM rank "张三"` |
+| 命令 | 作用 |
+| --- | --- |
+| `SADD key member ...` | 向 set 中添加一个或多个元素 |
+| `SREM key member ...` | 移除 set 中的指定元素 |
+| `SCARD key` | 返回 set 中元素的个数 |
+| `SISMEMBER key member` | 判断一个元素是否存在于 set 中 |
+| `SMEMBERS key` | 获取 set 中的所有元素 |
+| `SINTER key1 key2 ...` | 求 key1 与 key2 的**交集** |
+| `SDIFF key1 key2 ...` | 求 key1 与 key2 的**差集** |
+| `SUNION key1 key2 ...` | 求 key1 与 key2 的**并集** |
 
 ```bash
-ZADD rank 95 "张三" 87 "李四"
-ZREVRANGE rank 0 -1 WITHSCORES    # 按分数从高到低
+SADD s1 A B C             # S1 = {A, B, C}
+SADD s2 B C D             # S2 = {B, C, D}
+
+SINTER s1 s2              # 交集 -> B、C
+SDIFF s1 s2               # 差集 -> A（S1 有而 S2 没有的）
+SUNION s1 s2              # 并集 -> A、B、C、D
+SMEMBERS s1               # 获取所有元素
+SCARD s1                  # 元素个数
+SISMEMBER s1 A            # 判断 A 是否存在 -> 1
 ```
+
+> [!NOTE]
+> 交集 `SINTER` 的典型场景：**共同好友 / 共同关注**。差集 `SDIFF`：找出「我有而对方没有」的元素。
+
+### 3.5 SortedSet（有序集合，简称 ZSet）
+
+**概念**：Redis 的 SortedSet 是一个**可排序的 set 集合**，与 Java 中的 **TreeSet** 有些类似，但底层数据结构却差别很大。SortedSet 中的每一个元素都带有一个 **score 属性**，可以基于 score 属性对元素排序，底层的实现是一个**跳表（SkipList）加 hash 表**。
+
+**特征**：
+
+- 可排序
+- 元素不重复
+- 查询速度快
+
+**常见命令**
+
+| 命令 | 作用 |
+| --- | --- |
+| `ZADD key score member` | 添加一个或多个元素到 sorted set，如果已经存在则**更新其 score 值** |
+| `ZREM key member` | 删除 sorted set 中的一个指定元素 |
+| `ZSCORE key member` | 获取 sorted set 中的指定元素的 score 值 |
+| `ZRANK key member` | 获取 sorted set 中的指定元素的排名 |
+| `ZCARD key` | 获取 sorted set 中的元素个数 |
+| `ZCOUNT key min max` | 统计 score 值在给定范围内的所有元素的个数 |
+| `ZINCRBY key increment member` | 让 sorted set 中的指定元素自增，步长为指定的 increment 值 |
+| `ZRANGE key min max` | 按照 score 排序后，获取指定排名范围内的元素 |
+| `ZRANGEBYSCORE key min max` | 按照 score 排序后，获取指定 score 范围内的元素 |
+| `ZDIFF` / `ZINTER` / `ZUNION` | 求差集、交集、并集 |
+
+> [!IMPORTANT]
+> **所有的排名默认都是升序，如果要降序则在命令的 Z 后面添加 REV 即可。**
+> 例如 `ZRANGE` → `ZREVRANGE`，`ZRANK` → `ZREVRANK`。
+
+```bash
+ZADD rank 95 "张三" 87 "李四"      # 存分数
+ZRANGE rank 0 -1 WITHSCORES        # 升序：李四 87、张三 95
+ZREVRANGE rank 0 -1 WITHSCORES     # 降序（排行榜最常用）
+ZINCRBY rank 5 "张三"              # 张三的分数 +5
+ZSCORE rank "张三"                 # 查看张三的分数
+ZRANK rank "李四"                  # 查看李四的排名（升序）
+```
+
+> [!TIP]
+> 因为 SortedSet 的可排序特性，**经常被用来实现排行榜**这样的功能。
 
 ### 3.6 通用命令（任何类型都能用）
 
@@ -173,7 +246,7 @@ ZREVRANGE rank 0 -1 WITHSCORES    # 按分数从高到低
 
 1. **缓存**：把 MySQL 里的热点数据放 Redis，扛住高并发查询
 2. **登录态共享**：Session / Token 存 Redis，多台服务器都能读
-3. **排行榜 / 计数**：ZSet 和 INCR 天生擅长
+3. **排行榜 / 计数**：SortedSet 和 INCR 天生擅长
 4. **分布式锁**：多个服务抢同一资源时，用 SETNX 实现
 
 ## 五、踩坑记录
@@ -184,7 +257,8 @@ ZREVRANGE rank 0 -1 WITHSCORES    # 按分数从高到低
 - **`INCR` / `INCRBY` 只能作用于整型的值**：key 不存在时会当成 `0` 开始自增，但如果值是普通字符串会直接报错 `ERR value is not an integer or out of range`
 - **`SETNX` 靠返回值判断成败**：返回 `1` 表示设置成功（key 原先不存在），返回 `0` 表示 key 已存在、什么都没做——分布式锁就是靠这个判断的
 - **`HSET` 一次可以设多个字段**：Redis 4.0 之后 `HSET` 已支持多字段写法，老的 `HMSET` 被标记为废弃
-- **`DEL` 是通用命令**：不管什么类型都能删；但删 Hash 的某个字段要用 `HDEL`，删 Set 成员要用 `SREM`，别搞混
+- **删除要选对命令**：`DEL` 是通用的（删整个 key）；但删 Hash 的某个字段要用 `HDEL`，删 Set 成员要用 `SREM`，删 List 元素要用 `LREM`，别搞混
+- **`ZRANGE` 和 `ZREVRANGE` 只差一个 REV**：默认升序，想要降序就在 Z 后面加 REV
 
 **使用层面**
 
