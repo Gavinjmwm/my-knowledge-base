@@ -41,6 +41,7 @@ export default defineConfig({
         items: [
           { text: 'Redis 基础', link: '/notes/backend/redis-basics' },
           { text: 'Redis 企业实战', link: '/notes/backend/redis-enterprise' },
+          { text: 'Redis 八股', link: '/notes/backend/redis八股' },
           { text: '后端笔记（建设中）', link: '/notes/backend/' },
 	{ text : 'MySQL 基础' , link : '/notes/backend/mysql-basics' }
         ]
@@ -70,6 +71,7 @@ export default defineConfig({
           items: [
             { text: 'Redis 基础', link: '/notes/backend/redis-basics' },
             { text: 'Redis 企业实战', link: '/notes/backend/redis-enterprise' },
+            { text: 'Redis 八股', link: '/notes/backend/redis八股' },
             { text: '后端笔记（建设中）', link: '/notes/backend/' },
 		{ text : 'MySQL 基础' , link : '/notes/backend/mysql-basics' }
           ]
