@@ -49,7 +49,9 @@ export default defineConfig({
       {
         text: 'AI 知识',
         items: [
-          { text: 'AI 笔记（建设中）', link: '/notes/ai/' }
+          { text: 'AI 笔记总览', link: '/notes/ai/' },
+          { text: 'LangChain 新手速成', link: '/notes/ai/langchain-quickstart' },
+          { text: 'RAG 开发核心', link: '/notes/ai/rag-pipeline' }
         ]
       }
     ],
