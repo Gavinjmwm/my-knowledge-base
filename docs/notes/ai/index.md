@@ -7,6 +7,7 @@
 ## 笔记
 
 - [LangChain 新手速成：骨架、认字表与调用约定](./langchain-quickstart) —— 10 分钟看懂任何 LangChain 代码
+- [RAG 开发核心：流水线五件套与 LCEL 组链](./rag-pipeline) —— 从文档加载到完整 RAG 链的速查手册
 
 ## 规划中
 
